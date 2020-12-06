@@ -59,6 +59,20 @@ impl KvStore {
         );
     }
 
+    pub fn raw_update(&self, key: Vec<u8>, value: Vec<u8>) {
+        let mut data = self.data.write().unwrap();
+        data.insert(key, value);
+    }
+
+    pub fn raw_batch_update(&self, pairs: Vec<KvPair>) {
+        let mut data = self.data.write().unwrap();
+        data.extend(
+            pairs
+                .into_iter()
+                .map(|mut pair| (pair.take_key(), pair.take_value())),
+        );
+    }
+
     pub fn raw_delete(&self, key: &[u8]) {
         let mut data = self.data.write().unwrap();
         data.remove(key);

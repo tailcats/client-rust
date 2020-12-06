@@ -198,6 +198,96 @@ pub fn new_raw_batch_put_request(
 }
 
 #[async_trait]
+impl KvRequest for kvrpcpb::RawUpdateRequest {
+    type Result = ();
+    type RpcResponse = kvrpcpb::RawUpdateResponse;
+    type KeyData = KvPair;
+
+    fn make_rpc_request(&self, key: Self::KeyData, store: &Store) -> Result<Self> {
+        let mut req = self.request_from_store(store)?;
+        req.set_key(key.0.into());
+        req.set_value(key.1);
+        req.set_cf(self.cf.clone());
+
+        Ok(req)
+    }
+
+    fn store_stream<PdC: PdClient>(
+        &mut self,
+        pd_client: Arc<PdC>,
+    ) -> BoxStream<'static, Result<(Self::KeyData, Store)>> {
+        let key = mem::take(&mut self.key);
+        let value = mem::take(&mut self.value);
+        let pair = KvPair::new(key, value);
+        store_stream_for_key(pair, pd_client)
+    }
+
+    fn map_result(_: Self::RpcResponse) -> Self::Result {}
+
+    async fn reduce(results: BoxStream<'static, Result<Self::Result>>) -> Result<Self::Result> {
+        results
+            .into_future()
+            .map(|(f, _)| f.expect("no results should be impossible"))
+            .await
+    }
+}
+
+pub fn new_raw_update_request(
+    key: impl Into<Key>,
+    value: impl Into<Value>,
+    cf: Option<ColumnFamily>,
+) -> kvrpcpb::RawUpdateRequest {
+    let mut req = kvrpcpb::RawUpdateRequest::default();
+    req.set_key(key.into().into());
+    req.set_value(value.into());
+    req.maybe_set_cf(cf);
+
+    req
+}
+
+#[async_trait]
+impl KvRequest for kvrpcpb::RawBatchUpdateRequest {
+    type Result = ();
+    type RpcResponse = kvrpcpb::RawBatchUpdateResponse;
+    type KeyData = Vec<KvPair>;
+
+    fn make_rpc_request(&self, pairs: Self::KeyData, store: &Store) -> Result<Self> {
+        let mut req = self.request_from_store(store)?;
+        req.set_pairs(pairs.into_iter().map(Into::into).collect());
+        req.set_cf(self.cf.clone());
+
+        Ok(req)
+    }
+
+    fn store_stream<PdC: PdClient>(
+        &mut self,
+        pd_client: Arc<PdC>,
+    ) -> BoxStream<'static, Result<(Self::KeyData, Store)>> {
+        self.pairs.sort_by(|a, b| a.key.cmp(&b.key));
+        let pairs = mem::take(&mut self.pairs);
+        store_stream_for_keys(pairs, pd_client)
+    }
+
+    fn map_result(_: Self::RpcResponse) -> Self::Result {}
+
+    async fn reduce(results: BoxStream<'static, Result<Self::Result>>) -> Result<Self::Result> {
+        results.try_collect().await
+    }
+}
+
+pub fn new_raw_batch_update_request(
+    pairs: impl IntoIterator<Item = impl Into<KvPair>>,
+    cf: Option<ColumnFamily>,
+) -> kvrpcpb::RawBatchUpdateRequest {
+    let mut req = kvrpcpb::RawBatchUpdateRequest::default();
+    req.set_pairs(pairs.into_iter().map(Into::into).map(Into::into).collect());
+    req.maybe_set_cf(cf);
+
+    req
+}
+
+
+#[async_trait]
 impl KvRequest for kvrpcpb::RawDeleteRequest {
     type Result = ();
     type RpcResponse = kvrpcpb::RawDeleteResponse;
@@ -446,6 +536,8 @@ impl_raw_rpc_request!(RawGetRequest);
 impl_raw_rpc_request!(RawBatchGetRequest);
 impl_raw_rpc_request!(RawPutRequest);
 impl_raw_rpc_request!(RawBatchPutRequest);
+impl_raw_rpc_request!(RawUpdateRequest);
+impl_raw_rpc_request!(RawBatchUpdateRequest);
 impl_raw_rpc_request!(RawDeleteRequest);
 impl_raw_rpc_request!(RawBatchDeleteRequest);
 impl_raw_rpc_request!(RawScanRequest);
@@ -456,6 +548,8 @@ impl HasLocks for kvrpcpb::RawGetResponse {}
 impl HasLocks for kvrpcpb::RawBatchGetResponse {}
 impl HasLocks for kvrpcpb::RawPutResponse {}
 impl HasLocks for kvrpcpb::RawBatchPutResponse {}
+impl HasLocks for kvrpcpb::RawUpdateResponse {}
+impl HasLocks for kvrpcpb::RawBatchUpdateResponse {}
 impl HasLocks for kvrpcpb::RawDeleteResponse {}
 impl HasLocks for kvrpcpb::RawBatchDeleteResponse {}
 impl HasLocks for kvrpcpb::RawScanResponse {}

@@ -49,6 +49,8 @@ impl_request!(RawGetRequest, raw_get_async_opt, "raw_get");
 impl_request!(RawBatchGetRequest, raw_batch_get_async_opt, "raw_batch_get");
 impl_request!(RawPutRequest, raw_put_async_opt, "raw_put");
 impl_request!(RawBatchPutRequest, raw_batch_put_async_opt, "raw_batch_put");
+impl_request!(RawUpdateRequest, raw_update_async_opt, "raw_update");
+impl_request!(RawBatchUpdateRequest, raw_batch_update_async_opt, "raw_batch_update");
 impl_request!(RawDeleteRequest, raw_delete_async_opt, "raw_delete");
 impl_request!(
     RawBatchDeleteRequest,

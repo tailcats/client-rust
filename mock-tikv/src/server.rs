@@ -220,6 +220,30 @@ impl Tikv for MockTikv {
         spawn_unary_success!(ctx, req, resp, sink);
     }
 
+    fn raw_update(
+        &mut self,
+        ctx: grpcio::RpcContext,
+        req: tikv_client_proto::kvrpcpb::RawUpdateRequest,
+        sink: grpcio::UnarySink<tikv_client_proto::kvrpcpb::RawUpdateResponse>,
+    ) {
+        self.inner
+            .raw_update(req.get_key().to_vec(), req.get_value().to_vec());
+        let resp = RawUpdateResponse::default();
+        spawn_unary_success!(ctx, req, resp, sink);
+    }
+
+    fn raw_batch_update(
+        &mut self,
+        ctx: grpcio::RpcContext,
+        mut req: tikv_client_proto::kvrpcpb::RawBatchUpdateRequest,
+        sink: grpcio::UnarySink<tikv_client_proto::kvrpcpb::RawBatchUpdateResponse>,
+    ) {
+        let pairs = req.take_pairs();
+        self.inner.raw_batch_update(pairs);
+        let resp = RawBatchUpdateResponse::default();
+        spawn_unary_success!(ctx, req, resp, sink);
+    }
+
     fn raw_delete(
         &mut self,
         ctx: grpcio::RpcContext,
