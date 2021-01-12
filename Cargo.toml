@@ -22,11 +22,11 @@ async-trait = "0.1"
 derive-new = "0.5"
 futures = { version = "0.3.5", features = ["async-await", "thread-pool"] }
 futures-timer = "3.0"
-grpcio = { version = "0.7", features = [ "secure", "prost-codec" ], default-features = false }
+grpcio = { git = "https://github.com/tikv/grpc-rs", features = [ "secure", "prost-codec" ], default-features = false }
 lazy_static = "1"
 log = "0.4"
-prometheus = { version = "0.11", features = [ "push", "process" ], default-features = false } 
-rand = "0.8"
+prometheus = { version = "*", features = [ "push", "process" ], default-features = false } 
+rand = "0.7"
 regex = "1"
 serde = "1.0"
 serde_derive = "1.0"

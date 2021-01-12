@@ -8,9 +8,9 @@ build = "build.rs"
 protobuf-build = { version = "0.11", default-features = false, features = ["grpcio-prost-codec"] }
 
 [dependencies]
-protobuf = "=2.8.0"
+protobuf = "*"
 prost = { version = "0.6" }
 prost-derive = { version = "0.6" }
 futures = "0.3.5"
-grpcio = { version = "0.7", default-features = false, features = ["secure", "prost-codec"] }
+grpcio = { git = "https://github.com/tikv/grpc-rs", features = [ "secure", "prost-codec" ], default-features=false }
 lazy_static = { version = "1.3" }
