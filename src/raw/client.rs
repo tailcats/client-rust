@@ -208,7 +208,7 @@ impl Client {
     /// ```
     pub async fn update(&self, key: impl Into<Key>, value: impl Into<Value>) -> Result<()> {
         requests::new_raw_update_request(key, value, self.cf.clone())
-            .execute(self.rpc.clone(), OPTIMISTIC_BACKOFF)
+            .execute(self.rpc.clone(), RetryOptions::default_optimistic())
             .await
     }
 
@@ -234,7 +234,7 @@ impl Client {
         pairs: impl IntoIterator<Item = impl Into<KvPair>>,
     ) -> Result<()> {
         requests::new_raw_batch_update_request(pairs, self.cf.clone())
-            .execute(self.rpc.clone(), OPTIMISTIC_BACKOFF)
+            .execute(self.rpc.clone(), RetryOptions::default_optimistic())
             .await
     }
 
