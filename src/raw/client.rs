@@ -238,53 +238,6 @@ impl Client {
             .await
     }
 
-    /// Create a new 'update' request.
-    ///
-    /// Once resolved this request will result in updating the value based on the update function.
-    ///
-    /// # Examples
-    /// ```rust,no_run
-    /// # use tikv_client::{Key, Value, Config, RawClient};
-    /// # use futures::prelude::*;
-    /// # futures::executor::block_on(async {
-    /// # let client = RawClient::new(vec!["192.168.0.100"]).await.unwrap();
-    /// let key = "TiKV".to_owned();
-    /// let val = "TiKV".to_owned();
-    /// let req = client.update(key, val);
-    /// let result: () = req.await.unwrap();
-    /// # });
-    /// ```
-    pub async fn update(&self, key: impl Into<Key>, value: impl Into<Value>) -> Result<()> {
-        requests::new_raw_update_request(key, value, self.cf.clone())
-            .execute(self.rpc.clone(), OPTIMISTIC_BACKOFF)
-            .await
-    }
-
-    /// Create a new 'batch update' request.
-    ///
-    /// Once resolved this request will result in the updating of the values associated with the given keys.
-    ///
-    /// # Examples
-    /// ```rust,no_run
-    /// # use tikv_client::{Error, Result, KvPair, Key, Value, Config, RawClient, ToOwnedRange};
-    /// # use futures::prelude::*;
-    /// # futures::executor::block_on(async {
-    /// # let client = RawClient::new(vec!["192.168.0.100"]).await.unwrap();
-    /// let kvpair1 = ("PD".to_owned(), "Go".to_owned());
-    /// let kvpair2 = ("TiKV".to_owned(), "Rust".to_owned());
-    /// let iterable = vec![kvpair1, kvpair2];
-    /// let req = client.batch_update(iterable);
-    /// let result: () = req.await.unwrap();
-    /// # });
-    /// ```
-    pub async fn batch_update(
-        &self,
-        pairs: impl IntoIterator<Item = impl Into<KvPair>>,
-    ) -> Result<()> {
-        requests::new_raw_batch_update_request(pairs, self.cf.clone())
-            .execute(self.rpc.clone(), OPTIMISTIC_BACKOFF)
-            .await
-    }
 
     /// Create a new 'delete' request.
     ///
